@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 {% load static %}
+{% load socialaccount %}
+{% providers_media_js %}
 <html>
+
 <head>
 	<meta charset="utf-8">
 	<title>Register</title>
@@ -8,32 +11,123 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 	<!-- Font-->
 	<link rel="stylesheet" type="text/css" href="{% static 'Reg/css/opensans-font.css' %}">
-	<link rel="stylesheet" type="text/css" href="{% static 'Reg/fonts/material-design-iconic-font/css/material-design-iconic-font.min.css' %}">
+	<link rel="stylesheet" type="text/css"
+		href="{% static 'Reg/fonts/material-design-iconic-font/css/material-design-iconic-font.min.css' %}">
 	<!-- Main Style Css -->
-    <link rel="stylesheet" href="{% static 'Reg/css/style.css' %}"/>
+	<link rel="stylesheet" href="{% static 'Reg/css/style.css' %}" />
+	<style>
+		.submit-btn {
+			background: #1fca22;
+			color: #fff;
+			display: inline-block;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 10px;
+			cursor: pointer;
+			transition: background-color 0.3s ease;
+		}
+
+		.submit-btn:hover {
+			background: #19b249;
+		}
+
+		.submit-btn i {
+			margin-right: 5px;
+		}
+
+		.actions a[role="menuitem"] {
+			color: #fff;
+			text-decoration: none;
+		}
+
+		.google-signin {
+			display: flex;
+			justify-content: center;
+			width: 100%;
+		}
+
+		.google-signin a {
+			display: inline-block;
+			width: 100px;
+			height: 50px;
+			background-color: #f1f1f1;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			text-align: center;
+			line-height: 50px;
+			font-size: 24px;
+			color: #db4437;
+		}
+
+		.google-signin a:hover {
+			background-color: #e1e1e1;
+		}
+
+
+		.zmdi-google {
+			font-size: 24px;
+			/* Adjust icon size as needed */
+			color: #038f2f;
+			/* Google red color */
+		}
+
+		.divider {
+			text-align: center;
+			margin: 20px 0;
+			position: relative;
+			font-size: 14px;
+			color: #666;
+		}
+
+		.divider::before,
+		.divider::after {
+			content: "";
+			position: absolute;
+			top: 50%;
+			width: 40%;
+			height: 1px;
+			background-color: #ccc;
+		}
+
+		.divider::before {
+			left: 0;
+		}
+
+		.divider::after {
+			right: 0;
+		}
+	</style>
 </head>
+
 <body>
 	<div class="page-content">
 		<div class="form-v1-content">
 			<div class="wizard-form">
-		        <form class="form-register" action="#" method="post">
-		        	<div id="form-total">
-		        		<!-- SECTION 1 -->
-			            <h2>
-			            	<p class="step-icon"><span></span></p>
-			            	<span class="step-text">Login</span>
-			            </h2>
-			            <section>
-			                <div class="inner">
-			                	<div class="wizard-header">
+				<form class="form-register form-control" action="{% url 'Login' %}" method="POST">
+					{% csrf_token %}
+					<div id="form-total">
+						<!-- SECTION 1 -->
+						<h2>
+							<p class="step-icon"><span></span></p>
+							<span class="step-text">Login</span>
+						</h2>
+						<section>
+							<div class="inner">
+								<div class="wizard-header">
 									<h3 class="heading">Login</h3>
-									<p>Login</p>
+
+								</div>
+								<div class="form-row">
+									{% if error %}
+									<p class="text-danger">{{error}}</p>
+									{% endif %}
 								</div>
 								<div class="form-row">
 									<div class="form-holder form-holder-2">
 										<fieldset>
 											<legend>Your Email</legend>
-											<input type="text" name="your_email" id="your_email" class="form-control" pattern="[^@]+@[^@]+.[a-zA-Z]{2,6}" placeholder="example@email.com" required>
+											<input type="text" name="your_email" id="your_email" class="form-control"
+												placeholder="example@email.com" required>
 										</fieldset>
 									</div>
 								</div>
@@ -41,12 +135,32 @@
 									<div class="form-holder form-holder-2">
 										<fieldset>
 											<legend>Password</legend>
-											<input type="text" name="your_password" id="your_password" class="form-control"  required>
+											<input type="password" name="your_password" id="your_password"
+												class="form-control" required>
 										</fieldset>
 									</div>
 								</div>
+								<div class="form-row">
+									<div class="form-holder form-holder-2">
+										<!-- This will submit the form -->
+										<a href="{% url 'password_reset' %}" class=" text-dark "
+											style=" margin-left:300px;   text-decoration: none;">Forgot Password </a><br>
+									</div>
+								</div>
+								<div class="form-row">
+									<div class="form-holder form-holder-2">
+										<!-- This will submit the form -->
+										<button type="submit" class="zmdi zmdi-check submit-btn"
+											id="submit">Register</button>
+									</div>
+								</div>
+				</form>
+				<p class="divider">OR</p>
+				<div class="google-signin">
+					<a href="{% provider_login_url 'google' %}" class="zmdi zmdi-google" style="text-decoration:none">Sign In</a>
+				</div>
 
-								<!-- <div class="form-row form-row-date">
+				<!-- <div class="form-row form-row-date">
 									<div class="form-holder form-holder-2">
 										<label class="special-label">Birth Date:</label>
 										<select name="month" id="month">
@@ -73,20 +187,25 @@
 										</select>
 									</div>
 								</div> -->
-								<!-- <div class="form-row">
+				<!-- <div class="form-row">
 									<div class="form-holder form-holder-2">
 										<input type="text" class="form-control input-border" id="ssn" name="ssn" placeholder="SSN" required>
 									</div>
 								</div> -->
-							</div>
-			            </section>
-						<!-- SECTION 2 -->
-			            <!-- <h2>
-			            	<p class="step-icon"><span>02</span></p>
-			            	<span class="step-text">Address</span>
-			            </h2>
-						<section>
-			                <div class="inner">
+			</div>
+			</section>
+
+			<!-- SECTION 2 -->
+			<h2>
+				<div class="form-row">
+					<div class="form-holder">
+						<img src="{% static 'Reg/images/file.png' %}" alt="Company Logo"
+							style="width:100%; max-width:500px;max-height: 400px; margin-bottom:40px;">
+					</div>
+				</div>
+			</h2>
+			<section>
+				<!--  <div class="inner">
 			                	<div class="wizard-header">
 									<h3 class="heading">Personal Infomation</h3>
 									<p>Please enter your infomation and proceed to the next step so we can build your accounts.  </p>
@@ -121,7 +240,7 @@
 										</fieldset>
 									</div>
 								</div> -->
-								<!-- <div class="form-row form-row-date">
+				<!-- <div class="form-row form-row-date">
 									<div class="form-holder form-holder-2">
 										<label class="special-label">Birth Date:</label>
 										<select name="month" id="month">
@@ -148,15 +267,15 @@
 										</select>
 									</div>
 								</div> -->
-								<!-- <div class="form-row">
+				<!-- <div class="form-row">
 									<div class="form-holder form-holder-2">
 										<input type="text" class="form-control input-border" id="ssn" name="ssn" placeholder="SSN" required>
 									</div>
 								</div> -->
-							<!-- </div>
+				<!-- </div>
 			            </section> -->
-			            <!-- SECTION 3 -->
-			            <!-- <h2>
+				<!-- SECTION 3 -->
+				<!-- <h2>
 			            	<p class="step-icon"><span>03</span></p>
 			            	<span class="step-text">Set Financial Goals</span>
 			            </h2>
@@ -196,13 +315,13 @@
 			                	</div>
 							</div>
 			            </section> -->
-		        	</div>
-		        </form>
-			</div>
 		</div>
+	</div>
+	</div>
 	</div>
 	<script src="{% static 'Reg/js/jquery-3.3.1.min.js' %}"></script>
 	<script src="{% static 'Reg/js/jquery.steps.js' %}"></script>
 	<script src="{% static 'Reg/js/main.js' %}"></script>
-</body><!-- This templates was made by Colorlib (https://colorlib.com) -->
+</body>
+
 </html>

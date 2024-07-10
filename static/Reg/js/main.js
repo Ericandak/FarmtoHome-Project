@@ -10,8 +10,8 @@ $(function(){
         titleTemplate : '<div class="title">#title#</div>',
         labels: {
             previous : 'Back Step',
-            next : '<i class="zmdi zmdi-arrow-right"></i>',
-            finish : '<i class="zmdi zmdi-check"></i>',
+            next : '<i class="zmdi zmdi-arrow-left" area-disabled="true"></i>',
+            finish : '<i class="zmdi zmdi-check" area d></i>',
             current : ''
         },
     })

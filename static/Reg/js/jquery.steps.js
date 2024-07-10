@@ -802,17 +802,15 @@ function refreshPagination(wizard, options, state)
             var previous = wizard.find(".actions a[href$='#previous']").parent();
             previous._enableAria(state.currentIndex > 0);
         }
+        next._showAria(false)._enableAria(false);
 
         if (options.enableFinishButton && options.showFinishButtonAlways)
         {
             finish._enableAria(state.stepCount > 0);
-            next._enableAria(state.stepCount > 1 && state.stepCount > (state.currentIndex + 1));
         }
         else
         {
             finish._showAria(options.enableFinishButton && state.stepCount === (state.currentIndex + 1));
-            next._showAria(state.stepCount === 0 || state.stepCount > (state.currentIndex + 1)).
-                _enableAria(state.stepCount > (state.currentIndex + 1) || !options.enableFinishButton);
         }
     }
 }

@@ -1,0 +1,5 @@
+<form action="{% url 'stateentry' %}" method="POST">
+    <!-- Form fields -->
+    {% csrf_token %}
+    <button type="submit">Submit</button>
+</form>

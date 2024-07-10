@@ -1,9 +1,11 @@
 
 body {
 	margin:  0;
+    height: 100vh;
 }
 .page-content {
 	width: 100%;
+    height: 100vh;
 	margin:  0 auto;
 	display: flex;
 	display: -webkit-flex;
@@ -260,7 +262,6 @@ body {
 .inner .form-row .form-holder select {
     width: 100%;
     padding: 5px 0px 13px;
-    border: none;
     appearance: unset;
     -moz-appearance: unset;
     -webkit-appearance: unset;

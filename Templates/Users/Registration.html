@@ -54,8 +54,8 @@
 						<div id="form-total">
 							<!-- SECTION 1 -->
 							<h2>
-								<!-- <p class="step-icon"><span>01</span></p>
-								<span class="step-text">Personal Infomation</span> -->
+								
+								<span class="step-text">Personal Infomation</span>
 							</h2>
 							
 							<section>
@@ -70,7 +70,7 @@
 												<legend>First Name</legend>
 												<input type="text" class="form-control" id="first-name" name="first-name" placeholder="First Name" required>
 											</fieldset>
-											<p class="reg-uname-err"></p>
+											<p class="reg-uname-err text-danger"></p>
 
 											
 										</div>
@@ -87,13 +87,17 @@
 												<legend>Your Email</legend>
 												<input type="text" name="your_email" id="your_email" class="form-control" pattern="[^@]+@[^@]+.[a-zA-Z]{2,6}" placeholder="example@email.com" required>
 											</fieldset>
+											{% if error_message %}
+											<p class="text-danger">{{error_message}}</p>
+											{% endif %}
+			
 										</div>
 									</div>
 									<div class="form-row">
 										<div class="form-holder form-holder-2">
 											<fieldset>
 												<legend>Password</legend>
-												<input type="text" name="your_password" id="your_password" class="form-control"  required>
+												<input type="password" name="your_password" id="your_password" class="form-control"  required>
 											</fieldset>
 											<p class="pwd_error"></p>
 
@@ -103,7 +107,7 @@
 										<div class="form-holder form-holder-2">
 											<fieldset>
 												<legend> Confirm Your Password</legend>
-												<input type="text" name="your_cpassword" id="your_cpassword" class="form-control"  required>
+												<input type="password" name="your_cpassword" id="your_cpassword" class="form-control"  required>
 											</fieldset>
 											<p class="cp_error"></p>
 
@@ -256,9 +260,6 @@
 			</div>
 		</div>
 		<p>
-			{% if user %}
-			New user created with username {{ user.username}}
-			{% endif %}
 		</p>
 
 		<script src="{% static 'Reg/js/jquery-3.3.1.min.js' %}"></script>
