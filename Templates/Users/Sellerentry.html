@@ -122,7 +122,7 @@
         <div class="container">
             <div class="col-md-4 content-center">
                 <div class="card card-login card-plain">
-                    <form class="form" method="POST" action="{% url 'SellerDetails state_id=state' %}">
+                    <form class="form" method="POST" action="{% url 'SellerDetails' state_id=state_id %}">
                         {% csrf_token %}
                         <div class="header header-primary text-center">
                             <div class="logo-container">
@@ -130,20 +130,25 @@
                             </div>
                             <h5>FarmToHome</h5>
                             <h6>Enter Your Farm Details</h6>
+                            {% if error %}
+                            <div class="alert alert-danger" role="alert">
+                                {{ error }}
+                            </div>
+                            {% endif %}
                         </div>
                         <div class="content">
                             <div class="input-group form-group-no-border input-lg">
                                 <span class="input-group-addon">
                                     <i class="now-ui-icons users_circle-08"></i>
                                 </span>
-                                <input type="text" class="form-control" placeholder="Farm Name" name="first_name" id="farm_name">
+                                <input type="text" class="form-control" placeholder="Farm Name" name="farm_name" id="farm_name">
                             </div>
                             <p class="reg-uname-err"></p>
                             <div class="input-group form-group-no-border input-lg">
                                 <span class="input-group-addon">
                                     <i class="now-ui-icons text_caps-small"></i>
                                 </span>
-                                <input type="text" placeholder="Last Name" class="form-control" name="LandMark" id="LandMark"/>
+                                <input type="text" placeholder="Landmark" class="form-control" name="landmark" id="LandMark"/>
                             </div>
                             <div class="input-group form-group-no-border input-lg">
                                 <span class="input-group-addon">

@@ -163,13 +163,22 @@ def Login(request):
                         return redirect('address_entry')
                     else:
                         if has_seller_role:
-                            print('hi')
-                            return redirect('customer_dashboard_with_seller_link')
+                            try:
+                                Seller_details = SellerDetails.objects.get(user=user)
+                                if Seller_details.state is None:
+                                    return redirect('stateentry')
+                                elif not Seller_details.FarmAddress or not Seller_details.Farmcity or not Seller_details.Farmzip_code:
+                                    return redirect('SellerDetails')
+                                else:
+                                    return redirect('SellerHome')
+                            except SellerDetails.DoesNotExist:
+                                return redirect('stateentry')
                         return redirect('home')
                 except Address_table.DoesNotExist:
                     return redirect('stateentry')    
             if has_seller_role:
                 try:
+                    print("seller")
                     Sellrep = SellerDetails.objects.get(user=user)
                     if Sellrep.state is None:
                         return redirect('stateentry')
@@ -185,6 +194,7 @@ def Login(request):
             return render(request, 'Users/Login.html', {'error': error_message})
 
     return render(request, 'Users/Login.html')
+
 
 @login_required
 def auth_logout(request):
@@ -215,32 +225,43 @@ def stateentry(request):
     if request.method == 'POST':
         state_name = request.POST.get('state')
         country_name = request.POST.get('country')
-        print(country_name)
-        print(state_name)
         
         if state_name and country_name:
             state, created = State.objects.get_or_create(name=state_name, country=country_name)
-            roles = user.role.all()  # This will be a queryset of roles
+            roles = user.role.all()
+            role_names = set(roles.values_list('name', flat=True))
 
-            # Check if the user has any roles and handle accordingly
-            if roles:
-                # For example, you can use the first role for logic
-                user_role = roles.first().name.upper()
-
-                if user_role=='CUSTOMER':
+            # Check for Customer role
+            if 'Customer' in role_names:
+                try:
+                    address = Address_table.objects.get(user=user)
+                    if not address.address or not address.city or not address.zip_code:
+                        return redirect('address_entry', state_id=state.id)
+                except Address_table.DoesNotExist:
                     return redirect('address_entry', state_id=state.id)
-                elif user_role == 'SELLER':
+
+            # Check for Seller role
+            if 'Seller' in role_names:
+                try:
+                    seller_details = SellerDetails.objects.get(user=user)
+                    if not seller_details.FarmAddress or not seller_details.Farmcity or not seller_details.Farmzip:
+                        return redirect('SellerDetails', state_id=state.id)
+                except SellerDetails.DoesNotExist:
                     return redirect('SellerDetails', state_id=state.id)
+
+            # If all necessary details are filled, redirect to appropriate page
+            if 'Seller' in role_names:
+                return redirect('SellerHome')
             else:
-                error_message = "User has no roles assigned."
-                countries = State.objects.values_list('country', flat=True).distinct()
-                return render(request, 'Users/Stateentry.html', {'error': error_message, 'countries': countries})
+                return redirect('home')
+
         else:
             error_message = "Both state and country are required."
             countries = State.objects.values_list('country', flat=True).distinct()
-            return render(request, 'Users/Stateentry.html', {'error': error_message,'countries':countries})
+            return render(request, 'Users/Stateentry.html', {'error': error_message, 'countries': countries})
+
     countries = State.objects.values_list('country', flat=True).distinct()
-    return render(request, 'Users/Stateentry.html',{'countries':countries})
+    return render(request, 'Users/Stateentry.html', {'countries': countries})
 
 @login_required
 @require_GET
@@ -332,12 +353,17 @@ def profile_update(request):
             return redirect('profile_edit')
         countries = State.objects.exclude(country=state.country).values_list('country', flat=True).distinct()
     return render(request, 'Users/User_profile.html', {'user': user,'address':address,'state':state,'countries':countries})
-
+@login_required
 def SellerProfile(request):
+    user = request.user
     context = {
-        'background_image_url': static('assets/img/crops.jpg')
+        'username': user.username,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'email': user.email,
+        # Add any other user details you want to pass to the template
     }
-    return render(request,'Users/SellerLogin.html',context)
+    return render(request,'Products/SellerIndex.html',context)
 def SellerRegister(request):
     if request.method == 'POST':
         # Retrieve form data
@@ -454,8 +480,8 @@ def verify_otp_seller(request):
                     email=registration_data['email'],
                     phone_number=registration_data['phone'],
                     password=hashed_password,
-                    role=seller_role
                 )
+                new_user.role.set([seller_role])
                 # Clear session data after registration
                 del request.session['seller_data']
                 del request.session['otp']
@@ -471,40 +497,44 @@ def verify_otp_seller(request):
 
     return render(request, 'Users/seller_send_otp_email.html')
 @login_required
-def SellerDetails(request,state_id):
+def Seller_Details(request, state_id):
+    state = get_object_or_404(State, id=state_id)
     if request.method == 'POST':
-        farmname=request.POST.get('Farm_name')
-        street = request.POST.get('Landmark')
-        city = request.POST.get('your_city')
+        farmname = request.POST.get('farm_name')
+        street = request.POST.get('landmark')  
+        city = request.POST.get('Your_city')
         zipcode = request.POST.get('your_pin')
-        state = get_object_or_404(State, id=state_id)
-        if street and city and zipcode:
-            SellerDetails.objects.create(
-            user=request.user,
-            FarmName=farmname,
-            FarmAddress=street,
-            Farmcity=city,
-            Farmzip=zipcode,
-            state=state
-        )
-        try:
-                return redirect('SellerHome')  # Redirect to the home page or another appropriate page
-        except IntegrityError as e:
-                # Catch and print any IntegrityErrors
+        print(farmname)
+        print(street)
+        print(city)
+        print(zipcode)
+        if farmname and street and city and zipcode:
+            print('success')
+            try:
+                SellerDetails.objects.create(
+                    user=request.user,
+                    FarmName=farmname,
+                    FarmAddress=street,
+                    Farmcity=city,
+                    Farmzip_code=zipcode,
+                    state=state
+                )
+                return redirect('SellerHome')
+            except IntegrityError as e:
                 print(f"IntegrityError: {e}")
                 error_message = "There was an error saving your address. Please try again."
-                return render(request, 'Users/Sellerentry.html', {
-                    'error': error_message,
-                    'state': state_id
-                })
         else:
-            error_message = "All fields (street, city, and zipcode) are required."
-            return render(request, 'Users/Sellerentry.html', {
-                'error': error_message,
-                'state': state_id,
-                'address': addresss
-            })
+            error_message = "All fields (farm name, street, city, and zipcode) are required."
+        
+        context={
+            'error': error_message,
+            'state_id': state_id,
+            'state':state
+        }
+    else:
+        context={
+            'state_id': state_id,
+            'state':state
+        }
 
-    return render(request, 'Users/Sellerentry.html', {
-        'state': state_id
-    })
+    return render(request, 'Users/Sellerentry.html', context)

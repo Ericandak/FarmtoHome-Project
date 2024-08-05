@@ -37,7 +37,7 @@ urlpatterns=[
     path('Seller_login',views.SellerProfile,name="seller_login"),
     path('SellerReg',views.SellerRegister,name="SellerReg"),
     path('SellerHome',views.SellerProfile,name="SellerHome"),
-    path('SellerDetails/<int:state_id>',views.SellerDetails,name="SellerDetails"),
+    path('SellerDetails/<int:state_id>',views.Seller_Details,name="SellerDetails"),
     path('customer-dashboard/', views.customer_dashboard_with_seller_link, name='customer_dashboard_with_seller_link'),
 
     

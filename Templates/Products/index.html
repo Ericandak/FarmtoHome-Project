@@ -87,7 +87,7 @@
                                     <a href="cart.html" class="dropdown-item">Cart</a>
                                     <a href="{% url 'profile_edit' %}" class="dropdown-item">User Profile</a>
                                     {% if has_seller_role %}
-                                    <a href="#" class="dropdown-item">Switch to Seller</a>
+                                    <a href="{%url 'Sellerdetails' %}" class="dropdown-item">Switch to Seller</a>
                                     {% endif %}
                                     <form action="{% url 'logout' %}" method="POST">
                                         {% csrf_token %}
