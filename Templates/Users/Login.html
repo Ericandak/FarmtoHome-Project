@@ -17,10 +17,10 @@
 	<link rel="stylesheet" href="{% static 'Reg/css/style.css' %}" />
 	<style>
 		.submit-btn {
-			background: #1fca22;
+			background: #038216;
 			color: #fff;
 			display: inline-block;
-			padding: 10px 20px;
+			padding: 15px 30px;
 			border: none;
 			border-radius: 10px;
 			cursor: pointer;
@@ -143,15 +143,20 @@
 								<div class="form-row">
 									<div class="form-holder form-holder-2">
 										<!-- This will submit the form -->
+										<a href="{% url 'user_registration' %}" class=" text-dark "
+											style="text-decoration: none;">Sign Up</a><br>
+									</div>
+									<div class="form-holder form-holder-2">
+										<!-- This will submit the form -->
 										<a href="{% url 'password_reset' %}" class=" text-dark "
-											style=" margin-left:300px;   text-decoration: none;">Forgot Password </a><br>
+											style=" margin-left:50px;   text-decoration: none;">Forgot Password </a><br>
 									</div>
 								</div>
 								<div class="form-row">
 									<div class="form-holder form-holder-2">
 										<!-- This will submit the form -->
-										<button type="submit" class="zmdi zmdi-check submit-btn"
-											id="submit">Register</button>
+										<button type="submit" class="zmdi submit-btn"
+											id="submit">Login</button>
 									</div>
 								</div>
 				</form>

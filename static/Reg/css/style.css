@@ -20,7 +20,7 @@ body {
 	-moz-align-items: center;
 	-webkit-align-items: center;
     background-image: -moz-linear-gradient( 136deg, rgb(116,235,213) 0%, rgb(63,43,150) 100%);
-    background-image: -webkit-linear-gradient( 136deg, rgb(137, 252, 195) 0%, rgb(18, 180, 56) 100%);
+    background-image: -webkit-linear-gradient( 136deg, #2D00F7 0%, #F20089 100%);
     background-image: -ms-linear-gradient( 136deg, rgb(116,235,213) 0%, rgb(50, 155, 8) 100%);
     /* background: url("../images/File1.jpg") no-repeat center center;
     background-size: cover; */
@@ -55,7 +55,9 @@ body {
     display: block;
     width: 100%;
     overflow: hidden;
-    background: rgb(121, 193, 82);
+    background-image: -moz-linear-gradient( 136deg, rgb(116,235,213) 0%, rgb(63,43,150) 100%);
+    background-image: -webkit-linear-gradient( 136deg, #2D00F7 0%, #F20089 100%);
+    background-image: -ms-linear-gradient( 136deg, rgb(116,235,213) 0%, rgb(50, 155, 8) 100%);
     border-radius: 10px;
     -o-border-radius: 10px;
 	-ms-border-radius: 10px;
@@ -65,7 +67,9 @@ body {
 .form-register .steps {
     float: left;
     width: 280px;
-    background: rgb(121, 193, 82);
+    background-image: -moz-linear-gradient( 136deg, rgb(116,235,213) 0%, rgb(63,43,150) 100%);
+    background-image: -webkit-linear-gradient( 136deg, #2D00F7 0%, #F20089 100%);
+    background-image: -ms-linear-gradient( 136deg, rgb(116,235,213) 0%, rgb(50, 155, 8) 100%);
 }
 .form-register .steps ul {
     list-style: none;
@@ -138,7 +142,7 @@ body {
 .form-register .steps li.current a:active .step-icon,
 .form-register .steps li.done a .step-icon,
 .form-register .steps li.done a:active .step-icon {
-    background: #4fab40;
+    background: #F20089;
     color: #fff;
     box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.25);
 	-o-box-shadow: 0px 3px 10px 0px rgba(0, 0, 0, 0.25);

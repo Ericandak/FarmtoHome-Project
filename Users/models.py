@@ -1,22 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser,Group,Permission
 # Create your models here.
+class Role(models.Model):
+    name = models.CharField(max_length=20, unique=True)
+    def __str__(self):
+        return self.name
 class User(AbstractUser):
-    ROLE_CHOICES = [
-       ('CUSTOMER', 'Customer'),
-        ('SELLER', 'Seller'),
-        ('DELIVERY', 'Delivery'),
-        ('ADMIN','Admin'),
-        ('MAIN','Main'),
-    ]
-    
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    role = models.ManyToManyField(Role)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     is_admin = models.BooleanField(default=False)
     groups = models.ManyToManyField(Group, related_name='custom_user_groups')
     user_permissions = models.ManyToManyField(Permission, related_name='custom_user_permissions')
-
-
 
 
     def __str__(self):
@@ -37,3 +31,13 @@ class Address_table(models.Model):
 
     def __str__(self):
         return f"{self.address}, {self.city}, {self.state}"
+class SellerDetails(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    FarmName=models.CharField(max_length=15, blank=True, null=True)
+    FarmAddress=models.CharField(max_length=100, blank=True, null=True)
+    state = models.ForeignKey(State, on_delete=models.CASCADE) 
+    Farmcity = models.CharField(max_length=50, null=True, blank=True)
+    Farmzip_code = models.CharField(max_length=20, null=True, blank=True) 
+    
+
+
