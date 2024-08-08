@@ -1,6 +1,7 @@
 
 # Create your views here.
 from django.shortcuts import render,redirect,reverse,get_object_or_404
+from django.views.decorators.cache import never_cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse,JsonResponse
@@ -11,6 +12,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_log,logout
 from  django.contrib.auth.hashers import make_password
 from .models import Address_table,State,Role,SellerDetails
+from Products.models import Category,Product,CartItem_table,Cart_table
 from django.db import IntegrityError
 from django.views.decorators.http import require_GET
 from django.templatetags.static import static
@@ -133,79 +135,105 @@ def verify_otp(request):
 
     return render(request, 'Users/verify_otp.html')
 def Login(request):
-    user=request.user
-    if user.is_authenticated:
+    if request.user.is_authenticated:
         return redirect('home')
     if request.method == 'POST':
         email = request.POST.get('your_email')
         password = request.POST.get('your_password')
-        print(email)
-        print(password)
+        print(f"Attempting login with email: {email}")
 
-        user = authenticate(request,email=email,password=password)
-        # Assume you have a UserProfile model)
+        # Check if the user exists in the database
+        try:
+            user_obj = User.objects.get(email=email)
+            print(f"User found: {user_obj.username}, Email: {user_obj.email}")
+        except User.DoesNotExist:
+            print(f"No user found with email: {email}")
+            user_obj = None
+
+        user = authenticate(request, email=email, password=password)
         
         if user is not None:
+            print(f"Authentication successful for user: {user.username}")
             auth_log(request, user)
             request.session['username'] = user.username
             request.session.save()
             print(f"Session set in Login: {request.session.get('username')}")
             roles = user.role.all()
-            role_names = roles.values_list('name', flat=True)
-            has_customer_role = 'Customer' in role_names
-            has_seller_role = 'Seller' in role_names
-            if has_customer_role:
-                try:
-                    address = Address_table.objects.get(user=user)
-                    if address.state is None:
-                        return redirect('stateentry')
-                    elif not address.address or not address.city or not address.zip_code:
-                        return redirect('address_entry')
-                    else:
-                        if has_seller_role:
-                            try:
-                                Seller_details = SellerDetails.objects.get(user=user)
-                                if Seller_details.state is None:
-                                    return redirect('stateentry')
-                                elif not Seller_details.FarmAddress or not Seller_details.Farmcity or not Seller_details.Farmzip_code:
-                                    return redirect('SellerDetails')
-                                else:
-                                    return redirect('SellerHome')
-                            except SellerDetails.DoesNotExist:
-                                return redirect('stateentry')
-                        return redirect('home')
-                except Address_table.DoesNotExist:
-                    return redirect('stateentry')    
-            if has_seller_role:
-                try:
-                    print("seller")
-                    Sellrep = SellerDetails.objects.get(user=user)
-                    if Sellrep.state is None:
-                        return redirect('stateentry')
-                    elif not Sellrep.address or not Sellrep.city or not Sellrep.zip_code:
-                        return redirect('SellerDetails')
-                    else:
-                        return redirect('SellerHome')
-                except SellerDetails.DoesNotExist:
-                    return redirect('stateentry')
+            role_names = list(roles.values_list('name', flat=True))
+            print(f"User roles: {role_names}")
 
+            if 'Admin' in role_names:
+                return redirect('adminlog')
+            elif 'Customer' in role_names or 'Seller' in role_names:
+                return handle_customer_seller_login(user, role_names)
+            else:
+                error_message = "User role not recognized."
+                return render(request, 'Users/Login.html', {'error': error_message})
         else:
-            error_message = "Username or password is incorrect."
+            print("Authentication failed")
+            if user_obj:
+                print("User exists but authentication failed. Possible password mismatch.")
+            error_message = "Invalid email or password."
             return render(request, 'Users/Login.html', {'error': error_message})
 
     return render(request, 'Users/Login.html')
 
+def handle_customer_seller_login(user, role_names):
+    if 'Customer' in role_names:
+        try:
+            address = Address_table.objects.get(user=user)
+            if address.state is None:
+                return redirect('stateentry')
+            elif not address.address or not address.city or not address.zip_code:
+                return redirect('address_entry')
+            elif 'Seller' in role_names:
+                return handle_seller_part(user)
+            else:
+                return redirect('home')
+        except Address_table.DoesNotExist:
+            return redirect('stateentry')
+    elif 'Seller' in role_names:
+        return handle_seller_part(user)
 
+def handle_seller_part(user):
+    try:
+        seller_details = SellerDetails.objects.get(user=user)
+        if seller_details.state is None:
+            return redirect('stateentry')
+        elif not seller_details.FarmAddress or not seller_details.Farmcity or not seller_details.Farmzip_code:
+            return redirect('SellerDetails')
+        else:
+            return redirect('SellerHome')
+    except SellerDetails.DoesNotExist:
+        return redirect('stateentry')
+
+@never_cache
 @login_required
 def auth_logout(request):
     logout(request)
     return redirect('Login')
 @login_required
 def home(request):
+    user = request.user
+    cart_item_count = 0
+    products = Product.objects.filter(is_active=True)  # Fetch all active products
+    categories = Category.objects.all()
+    try:
+        cart = Cart_table.objects.get(user=user)
+        cart_item_count = cart.items.count()
+    except Cart_table.DoesNotExist:
+        pass  # If the cart doesn't exist, count remains 0
+    print(f"Number of products: {products.count()}")
     username = request.session.get('username', None)
-    if not username:
-        return redirect('Login')  
-    return render(request, 'Products/index.html', {'username': username})
+    
+    context = {
+        'username': username,
+        'products': products,
+        'categories': categories,
+        'cart_item_count': cart_item_count
+    }
+    
+    return render(request, 'Products/index.html', context)
 @login_required
 def customer_dashboard_with_seller_link(request):
     print("Session keys:", request.session.keys())
@@ -356,11 +384,11 @@ def profile_update(request):
 @login_required
 def SellerProfile(request):
     user = request.user
+    categories=Category.objects.all()
     context = {
         'username': user.username,
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'email': user.email,
+        'categories':categories
+
         # Add any other user details you want to pass to the template
     }
     return render(request,'Products/SellerIndex.html',context)
@@ -538,3 +566,52 @@ def Seller_Details(request, state_id):
         }
 
     return render(request, 'Users/Sellerentry.html', context)
+
+def adminlog(request):
+    if request.user.is_authenticated:
+        username = request.user.username
+        return render(request, 'admin/dashboard.html', {'username': username})
+    else:
+        return redirect('Login')  # Redirect to login page if not authenticated
+
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def adminupdate(request):
+    user = request.user
+    if request.method == 'POST':
+        try:
+
+            user.username = request.POST.get('username', user.username)
+            user.first_name = request.POST.get('first_name', user.first_name)
+            user.last_name = request.POST.get('last_name', user.last_name)
+            user.phone_number = request.POST.get('phone_number', user.phone_number)
+            user.save()
+            messages.success(request, "Admin details updated successfully.")
+        except Exception as e:
+            messages.error(request, f"Failed to update admin details. Error: {str(e)}")
+        return redirect('adminupdate')
+
+    context = {
+        'username': user.username,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'phone_number': user.phone_number,
+    }
+    return render(request, 'admin/user.html', context)
+@login_required
+def userslist(request):
+    users = User.objects.all()
+    return render(request, 'admin/tables.html', {'users': users, 'username': request.user.username})
+@login_required
+def deactivate_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        user.is_active = False
+        user.save()
+        messages.success(request, f"User {user.username} has been deactivated successfully.")
+        return redirect('adminuserslist')
+    users = User.objects.all()
+    return render(request, 'admin/tables.html', {'users': users, 'username': request.user.username})

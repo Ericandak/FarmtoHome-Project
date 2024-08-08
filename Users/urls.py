@@ -33,13 +33,14 @@ urlpatterns=[
         template_name='registration/password_reset_complete.html'
     ),name="password_reset_complete"),
     path('ajax/load-states/', views.load_states, name='ajax_load_states'),
-    path('profile_edit',views.profile_update,name="profile_edit"),
-    path('Seller_login',views.SellerProfile,name="seller_login"),
-    path('SellerReg',views.SellerRegister,name="SellerReg"),
-    path('SellerHome',views.SellerProfile,name="SellerHome"),
+    path('profile_edit/',views.profile_update,name="profile_edit"),
+    path('Seller_login/',views.SellerProfile,name="seller_login"),
+    path('SellerReg/',views.SellerRegister,name="SellerReg"),
+    path('SellerHome/',views.SellerProfile,name="SellerHome"),
     path('SellerDetails/<int:state_id>',views.Seller_Details,name="SellerDetails"),
     path('customer-dashboard/', views.customer_dashboard_with_seller_link, name='customer_dashboard_with_seller_link'),
-
-    
-
+    path('adminlog/',views.adminlog,name="adminlog"),
+    path('adminupdate/',views.adminupdate,name="adminupdate"),
+    path('tables/',views.userslist,name="adminuserslist"),
+    path('users/deactivate/<int:user_id>/', views.deactivate_user, name='deactivateuser'),
 ]
