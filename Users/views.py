@@ -15,6 +15,7 @@ from .models import Address_table,State,Role,SellerDetails
 from Products.models import Category,Product,CartItem_table,Cart_table
 from django.db import IntegrityError
 from django.views.decorators.http import require_GET
+from allauth.account.utils import user_username
 from django.templatetags.static import static
 
 
@@ -136,6 +137,21 @@ def verify_otp(request):
     return render(request, 'Users/verify_otp.html')
 def Login(request):
     if request.user.is_authenticated:
+        # Check if the user just completed social login
+        if 'socialaccount_login' in request.session:
+            del request.session['socialaccount_login']
+
+        if not request.user.role.exists():
+            customer_role, created = Role.objects.get_or_create(name='Customer')
+            request.user.role.add(customer_role)
+            request.user.save()
+
+        try:
+            address = Address_table.objects.get(user=request.user)
+            if address.state is None:
+                return redirect('stateentry')
+        except Address_table.DoesNotExist:
+            return redirect('stateentry')
         return redirect('home')
     if request.method == 'POST':
         email = request.POST.get('your_email')
@@ -224,7 +240,9 @@ def home(request):
     except Cart_table.DoesNotExist:
         pass  # If the cart doesn't exist, count remains 0
     print(f"Number of products: {products.count()}")
-    username = request.session.get('username', None)
+    username = request.session.get('username') or user_username(user)
+    if not username:
+        username = user.email.split('@')[0] if user.email else 'User'
     
     context = {
         'username': username,
@@ -347,40 +365,59 @@ def addressentry(request, state_id):
     return render(request, 'Users/addressentry.html', {
         'state': state_id
     })
-
+@login_required
 def profile_update(request):
-    username = request.session.get('username', None)
-    user=None
-    address=None
+    user=request.user
+    username = user.username
+    user = None
+    address = None
+    state = None
+    countries = []
+
     if username:
         try:
             user = get_object_or_404(User, username=username)
             address = get_object_or_404(Address_table, user=user)
             state = address.state if address else None
-        except (User.DoesNotExist,Address_table.DoesNotExist):
-            user = None  # Handle the case where the user does not exist
+        except (User.DoesNotExist, Address_table.DoesNotExist):
+            user = None
             address = None
+
         if request.method == 'POST':
-            user.email = request.POST.get('email', user.email)
-            user.first_name = request.POST.get('first_name', user.first_name)
-            user.last_name = request.POST.get('last_name', user.last_name)
-            user.phone_number = request.POST.get('phone_number', user.phone_number)
-            user.save()
-        
-            address.address = request.POST.get('street', address.address)
-            address.city = request.POST.get('city', address.city)
-            address.zip_code = request.POST.get('zip_code', address.zip_code)
-            new_state = request.POST.get('state')
-            new_country = request.POST.get('country')
-            if new_state and new_country:
-                state, created = State.objects.get_or_create(name=new_state, country=new_country)
-                address.state = state
-        
-            address.save()
+            if user:
+                user.email = request.POST.get('email', user.email)
+                user.first_name = request.POST.get('first_name', user.first_name)
+                user.last_name = request.POST.get('last_name', user.last_name)
+                user.phone_number = request.POST.get('phone_number', user.phone_number)
+                user.save()
+
+            if address:
+                address.address = request.POST.get('street', address.address)
+                address.city = request.POST.get('city', address.city)
+                address.zip_code = request.POST.get('zip_code', address.zip_code)
+                new_state = request.POST.get('state')
+                new_country = request.POST.get('country')
+                if new_state and new_country:
+                    state, created = State.objects.get_or_create(name=new_state, country=new_country)
+                    address.state = state
+                address.save()
+
             messages.success(request, "Profile updated successfully.")
             return redirect('profile_edit')
-        countries = State.objects.exclude(country=state.country).values_list('country', flat=True).distinct()
-    return render(request, 'Users/User_profile.html', {'user': user,'address':address,'state':state,'countries':countries})
+
+        if state:
+            countries = State.objects.values_list('country', flat=True).distinct()
+    else:
+        messages.error(request, "User not found in session.")
+        return redirect('Login')  # Redirect to login page if username is not in session
+
+    context = {
+        'user': user,
+        'address': address,
+        'state': state,
+        'countries': countries
+    }
+    return render(request, 'Users/User_profile.html', context)
 @login_required
 def SellerProfile(request):
     user = request.user

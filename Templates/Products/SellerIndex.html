@@ -73,7 +73,7 @@
     
     <div class="wrapper">
         <div class="page-header page-header-small" filter-color="orange">
-            <div class="page-header-image" data-parallax="true" style="background-image: url('{% static '/assets/img/bg5.jpg' %}');"></div>
+            <div class="page-header-image" data-parallax="true" style="background-image: url('{% static '/assets/img/bg5.jpg' %};')"></div>
             <div class="container">
                 <div class="content-center">
                     <h1 class="title">Welcome, {{ username }}!</h1>
@@ -89,24 +89,26 @@
                 <div class="row">
                     <div class="col-md-8 ml-auto mr-auto">
                         <h2 class="title text-center">Add New Product</h2>
-                        <form class="contact-form" method="POST" action="{% url 'add_product' %}" enctype="multipart/form-data">
+                        <form id="addProductForm" class="contact-form" method="POST" action="{% url 'add_product' %}" enctype="multipart/form-data">
                             {% csrf_token %}
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Product Name</label>
-                                        <input type="text" class="form-control" placeholder="Product Name" name="product_name" required>
+                                        <input type="text" class="form-control" placeholder="Product Name" name="product_name" id="product_name" required>
+                                        <p class="error-message" id="product_name_error"></p>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Category</label>
-                                        <select class="form-control" name="category" required>
+                                        <select class="form-control" name="category" id="category" required>
                                             <option value="">Select Category</option>
                                             {% for category in categories %}
                                                 <option value="{{ category.id }}">{{ category.name }}</option>
-                                                {% endfor %}
+                                            {% endfor %}
                                         </select>
+                                        <p class="error-message" id="category_error"></p>
                                     </div>
                                 </div>
                             </div>
@@ -114,13 +116,15 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Price</label>
-                                        <input type="number" class="form-control" placeholder="Price" name="price" required>
+                                        <input type="number" class="form-control" placeholder="Price" name="price" id="price" required>
+                                        <p class="error-message" id="price_error"></p>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Quantity</label>
-                                        <input type="number" class="form-control" placeholder="Quantity" name="quantity" required>
+                                        <input type="number" class="form-control" placeholder="Quantity" name="quantity" id="quantity" required>
+                                        <p class="error-message" id="quantity_error"></p>
                                     </div>
                                 </div>
                             </div>
@@ -128,7 +132,8 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label>Description</label>
-                                        <textarea class="form-control" rows="4" placeholder="Product Description" name="description" required></textarea>
+                                        <textarea class="form-control" rows="4" placeholder="Product Description" name="description" id="description" required></textarea>
+                                        <p class="error-message" id="description_error"></p>
                                     </div>
                                 </div>
                             </div>
@@ -136,7 +141,8 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label>Product Image</label>
-                                        <input type="file" class="form-control-file" name="image" required>
+                                        <input type="file" class="form-control-file" name="image" id="image" required>
+                                        <p class="error-message" id="image_error"></p>
                                     </div>
                                 </div>
                             </div>
@@ -144,7 +150,7 @@
                                 <div class="col-md-12">
                                     <div class="form-check">
                                         <label class="form-check-label">
-                                            <input class="form-check-input" type="checkbox" name="is_active" checked>
+                                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" checked>
                                             Active Product
                                             <span class="form-check-sign"></span>
                                         </label>
@@ -153,7 +159,7 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-4 ml-auto mr-auto text-center">
-                                    <button class="btn btn-primary btn-round btn-lg">Add Product</button>
+                                    <button type="submit" class="btn btn-primary btn-round btn-lg">Add Product</button>
                                 </div>
                             </div>
                         </form>
@@ -218,5 +224,112 @@
 <script src="{% static '/assets/js/plugins/bootstrap-datepicker.js' %}" type="text/javascript"></script>
 <!-- Control Center for Now Ui Kit: parallax effects, scripts for the example pages etc -->
 <script src="{% static '/assets/js/now-ui-kit.js' %}?v=1.1.0" type="text/javascript"></script>
+<script>
+    $(document).ready(function() {
+        function validateInput(input, errorElement, validationFunction) {
+            const value = input.val().trim();
+            const error = validationFunction(value);
+            if (error) {
+                errorElement.text(error).css('color', 'red');
+                return false;
+            } else {
+                errorElement.text('');
+                return true;
+            }
+        }
+    
+        function validateProductName(value) {
+            if (value.length < 3 || value.length > 100) {
+                return 'Product name must be between 3 and 100 characters.';
+            }
+            return null;
+        }
+    
+        function validateCategory(value) {
+            if (!value) {
+                return 'Please select a category.';
+            }
+            return null;
+        }
+    
+        function validatePrice(value) {
+            if (isNaN(value) || value <= 0) {
+                return 'Price must be a positive number.';
+            }
+            return null;
+        }
+        function validateQuantity(value) {
+        if (!Number.isInteger(Number(value)) || value < 0) {
+            return 'Quantity must be a non-negative integer.';
+        }
+        return null;
+    }
+
+    function validateDescription(value) {
+        if (value.length < 10 || value.length > 1000) {
+            return 'Description must be between 10 and 1000 characters.';
+        }
+        return null;
+    }
+
+    function validateImage(value) {
+        if (!value) {
+            return 'Please select an image.';
+        }
+        const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif)$/i;
+        if (!allowedExtensions.exec(value)) {
+            return 'Please upload an image file (jpg, jpeg, png, gif).';
+        }
+        return null;
+    }
+    $('#product_name').on('input', function() {
+        validateInput($(this), $('#product_name_error'), validateProductName);
+    });
+
+    $('#category').on('change', function() {
+        validateInput($(this), $('#category_error'), validateCategory);
+    });
+
+    $('#price').on('input', function() {
+        validateInput($(this), $('#price_error'), validatePrice);
+    });
+
+    $('#quantity').on('input', function() {
+        validateInput($(this), $('#quantity_error'), validateQuantity);
+    });
+
+    $('#description').on('input', function() {
+        validateInput($(this), $('#description_error'), validateDescription);
+    });
+
+    $('#image').on('change', function() {
+        validateInput($(this), $('#image_error'), validateImage);
+    });
+
+    $('#addProductForm').on('submit', function(e) {
+        let isValid = true;
+        
+        isValid = validateInput($('#product_name'), $('#product_name_error'), validateProductName) && isValid;
+        isValid = validateInput($('#category'), $('#category_error'), validateCategory) && isValid;
+        isValid = validateInput($('#price'), $('#price_error'), validatePrice) && isValid;
+        isValid = validateInput($('#quantity'), $('#quantity_error'), validateQuantity) && isValid;
+        isValid = validateInput($('#description'), $('#description_error'), validateDescription) && isValid;
+        isValid = validateInput($('#image'), $('#image_error'), validateImage) && isValid;
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+
+<style>
+    .error-message {
+        color: red;
+        font-size: 0.8em;
+        margin-top: 5px;
+    }
+</style>
+
+
 
 </html>
