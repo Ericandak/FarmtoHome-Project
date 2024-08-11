@@ -93,7 +93,7 @@
                             <i class="fa fa-shopping-bag fa-2x"></i>
                             <span
                                 class="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
-                                style="top: -5px; left: 15px; height: 20px; min-width: 20px;">{{ cart_item_count }}</span>
+                                style="top: -5px; left: 15px; height: 20px; min-width: 20px;">{{ cart_item_count}}</span>
                         </a>
                         <div class="nav-item dropdown">
                             <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Hi,{{ username }}</a>
@@ -152,6 +152,25 @@
             <li class="breadcrumb-item"><a href="#">Pages</a></li>
             <li class="breadcrumb-item active text-white">Cart</li>
         </ol>
+    </div>
+    <div class="modal fade" id="processingModal" tabindex="-1" aria-labelledby="processingModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="processingModalLabel">Processing Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Your order is being processed. Please wait...</p>
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <!-- Single Page Header End -->
 
@@ -232,7 +251,7 @@
                             <h5>Total</h5>
                             <h5 id="cart-total">₹{{ total }}</h5>
                         </div>
-                        <button class="btn btn-outline-primary btn-block mt-3">Proceed to Checkout</button>
+                        <button id="checkoutBtn" class="btn btn-outline-primary btn-block mt-3">Proceed to Checkout</button>
                     </div>
                 </div>
             </div>
@@ -381,7 +400,7 @@
                             $('#cart-total').text('₹' + response.total);
                             if (response.is_cart_empty) {
                                 $('.table-responsive').html('<p class="text-center">Your cart is empty.</p>');
-                                $('.mt-5, .row.justify-content-end.mt-5').hide();  
+                                $('.mt-5, .row.justify-content-end.mt-5').hide();
                             }
                         } else {
                             alert(response.message);
@@ -447,4 +466,21 @@
             });
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            const processingModal = new bootstrap.Modal(document.getElementById('processingModal'));
+        
+            checkoutBtn.addEventListener('click', function() {
+                processingModal.show();
+                
+                // Simulate processing time (3 seconds)
+                setTimeout(function() {
+                    processingModal.hide();
+                    // Here you would normally redirect to the actual checkout page or process the order
+                    alert('Order processed successfully!');
+                }, 3000);
+            });
+        });
+        </script>
 </body>

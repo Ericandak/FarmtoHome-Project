@@ -255,13 +255,20 @@ def search_results(request):
     results = results.order_by(sort)
 
     categories = Category.objects.all()
+    try:
+        cart = Cart_table.objects.get(user=user)
+        cart_item_count = cart.items.count()
+    except Cart_table.DoesNotExist:
+        cart_item_count = 0
 
     context = {
         'results': results,
         'query': query,
         'categories': categories,
         'sort': sort, 
-        'username':user.username # Add this line to pass the current sort to the template
+        'username':user.username,
+        'cart_item_count': cart_item_count # Add this line to pass the current sort to the template
+
     }
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render_to_string('Products/search_results_partial.html', context)

@@ -59,6 +59,23 @@
 #searchModal .btn {
     border-radius: 0 20px 20px 0;
 }
+.product-image-container {
+        width: 100%;
+        height: 0;
+        padding-bottom: 100%; /* Creates a square aspect ratio */
+        position: relative;
+        overflow: hidden;
+    }
+
+    .product-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* This ensures the image covers the entire container */
+        object-position: center; /* Centers the image within the container */
+    }
     </style>
 </head>
 
@@ -188,12 +205,11 @@
                 <div class="col-lg-8 col-xl-9">
                     <div class="row g-4">
                         <div class="col-lg-6">
-                            <div class="border rounded">
+                            <div class="border rounded product-image-container">
                                 {% if product.image %}
-                                <img src="{{ product.image.url }}" class="img-fluid rounded" alt="{{ product.name }}">
+                                <img src="{{ product.image.url }}" class="product-image" alt="{{ product.name }}">
                                 {% else %}
-                                <img src="{% static 'Products/img/default-product.jpg' %}" class="img-fluid rounded"
-                                    alt="{{ product.name }}">
+                                <img src="{% static 'Products/img/default-product.jpg' %}" class="product-image" alt="{{ product.name }}">
                                 {% endif %}
                             </div>
                         </div>
@@ -212,20 +228,20 @@
                             <form action="{% url 'add_to_cart' product.id %}" method="post">
                                 {% csrf_token %}
                                 <div class="input-group quantity mb-5" style="width: 100px;">
-                                    <div class="input-group-btn">
+                                    <!-- <div class="input-group-btn">
                                         <button class="btn btn-sm btn-minus rounded-circle bg-light border"
                                             type="button">
                                             <i class="fa fa-minus"></i>
                                         </button>
-                                    </div>
-                                    <input type="text" class="form-control form-control-sm text-center border-0"
-                                        name="quantity" value="1">
-                                    <div class="input-group-btn">
+                                    </div> -->
+                                    <!-- <input type="text" class="form-control form-control-sm text-center border-0"
+                                        name="quantity" value="1"> -->
+                                    <!-- <div class="input-group-btn">
                                         <button class="btn btn-sm btn-plus rounded-circle bg-light border"
                                             type="button">
                                             <i class="fa fa-plus"></i>
                                         </button>
-                                    </div>
+                                    </div> -->
                                 </div>
                                 <button type="submit"
                                     class="btn border border-secondary rounded-pill px-4 py-2 mb-4 text-primary">

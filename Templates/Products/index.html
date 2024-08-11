@@ -84,6 +84,34 @@
         .alert .btn-close {
             filter: invert(1) grayscale(100%) brightness(200%);
         }
+        .modal-backdrop {
+    opacity: 0.5;
+}
+
+#searchModal .modal-content {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+#searchModal .modal-header {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+#searchModal .modal-body {
+    padding-top: 0;
+}
+
+#searchModal .form-control {
+    border-radius: 20px 0 0 20px;
+    border: 1px solid #ced4da;
+}
+
+#searchModal .btn {
+    border-radius: 0 20px 20px 0;
+}
     </style>
 </head>
 
@@ -178,19 +206,22 @@
 
 
     <!-- Modal Search Start -->
-    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content rounded-0">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Search by keyword</h5>
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="searchModalLabel">Search Products</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body d-flex align-items-center">
-                    <div class="input-group w-75 mx-auto d-flex">
-                        <input type="search" class="form-control p-3" placeholder="keywords"
-                            aria-describedby="search-icon-1">
-                        <span id="search-icon-1" class="input-group-text p-3"><i class="fa fa-search"></i></span>
-                    </div>
+                <div class="modal-body">
+                    <form id="searchForm" action="{% url 'search_results' %}" method="GET">
+                        <div class="input-group">
+                            <input type="search" name="q" class="form-control" placeholder="Enter keywords" aria-label="Search" required>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -1328,6 +1359,43 @@
 
     <!-- Template Javascript -->
     <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            function loadResults(url) {
+                var formData = $('#filter-form').serialize();
+                var sortValue = $('#sort').val();
+                if (sortValue) {
+                    formData += '&sort=' + sortValue;
+                }
+                $.ajax({
+                    url: url,
+                    data: formData,
+                    success: function(data) {
+                        $('#search-results').html(data.html);
+                        $('#search-query').text(data.query);
+                        history.pushState(null, '', url + '?' + formData);
+                    }
+                });
+            }
+    
+            $('#filter-form').on('submit', function(e) {
+                e.preventDefault();
+                loadResults("{% url 'search_results' %}");
+            });
+    
+            $(document).on('change', '#filter-form select, #filter-form input', function() {
+                loadResults("{% url 'search_results' %}");
+            });
+    
+            // Add this line to handle sort changes
+            $('#sort').on('change', function() {
+                loadResults("{% url 'search_results' %}");
+            });
+    
+            // Initial load
+            loadResults(window.location.href);
+        });
+    </script>
 </body>
 
 </html>
