@@ -247,15 +247,15 @@
     }
 
     function validateImage(value) {
-        if (!value) {
-            return 'Please select an image.';
-        }
-        const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif)$/i;
-        if (!allowedExtensions.exec(value)) {
-            return 'Please upload an image file (jpg, jpeg, png, gif).';
-        }
-        return null;
+    if (!value) {
+        return null; // No file selected, which is okay for editing
     }
+    const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif)$/i;
+    if (!allowedExtensions.exec(value)) {
+        return 'Please upload an image file (jpg, jpeg, png, gif) or leave it empty.';
+    }
+    return null;
+}
     $('#product_name').on('input', function() {
         validateInput($(this), $('#product_name_error'), validateProductName);
     });
@@ -281,18 +281,20 @@
     });
 
     $('#editProductForm').on('submit', function(e) {
-        let isValid = true;
-        
-        isValid = validateInput($('#product_name'), $('#product_name_error'), validateProductName) && isValid;
-        isValid = validateInput($('#category'), $('#category_error'), validateCategory) && isValid;
-        isValid = validateInput($('#price'), $('#price_error'), validatePrice) && isValid;
-        isValid = validateInput($('#quantity'), $('#quantity_error'), validateQuantity) && isValid;
-        isValid = validateInput($('#description'), $('#description_error'), validateDescription) && isValid;
+    let isValid = true;
+    
+    isValid = validateInput($('#product_name'), $('#product_name_error'), validateProductName) && isValid;
+    isValid = validateInput($('#category'), $('#category_error'), validateCategory) && isValid;
+    isValid = validateInput($('#price'), $('#price_error'), validatePrice) && isValid;
+    isValid = validateInput($('#quantity'), $('#quantity_error'), validateQuantity) && isValid;
+    isValid = validateInput($('#description'), $('#description_error'), validateDescription) && isValid;
+    // Only validate image if a file is selected
+    if ($('#image').val()) {
         isValid = validateInput($('#image'), $('#image_error'), validateImage) && isValid;
-        if (!isValid) {
-            e.preventDefault();
-        }
-    });
+    }
+    if (!isValid) {
+        e.preventDefault();
+    }
 });
 </script>
 

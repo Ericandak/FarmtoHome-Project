@@ -1,14 +1,78 @@
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Product,Category,Stock,Cart_table,CartItem_table
+from .models import Product,Category,Stock,Cart_table,CartItem_table,Review
 from django.contrib import messages
 from django.urls import reverse
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.core.exceptions import ValidationError
 import json
 from django.db.models import Q
 from django.template.loader import render_to_string
+from PIL import Image
+from PIL.ExifTags import TAGS
+from datetime import datetime,timedelta
+import io
+import imghdr
+import magic
+import os
+
+def get_image_creation_time(image):
+    creation_time = None
+    method_used = None
+
+    # Method 1: EXIF Data (Most reliable for original photos)
+    try:
+        img = Image.open(image)
+        exif_data = img._getexif()
+        if exif_data:
+            for tag_id, value in exif_data.items():
+                tag = TAGS.get(tag_id, tag_id)
+                if tag == 'DateTimeOriginal':
+                    creation_time = datetime.strptime(value, '%Y:%m:%d %H:%M:%S')
+                    method_used = "EXIF DateTimeOriginal"
+                    break
+    except Exception as e:
+        print(f"Error reading EXIF data: {str(e)}")
+
+    # Method 2: File creation time (Fallback)
+    if not creation_time:
+        try:
+            creation_time = datetime.fromtimestamp(os.path.getctime(image.temporary_file_path()))
+            method_used = "File creation time"
+        except Exception as e:
+            print(f"Error getting file creation time: {str(e)}")
+
+    return creation_time, method_used
+
+def is_valid_image(image):
+    # Check file extension
+    valid_extensions = ['.jpg', '.jpeg', '.png', '.gif']
+    ext = os.path.splitext(image.name)[1].lower()
+    if ext not in valid_extensions:
+        return False
+
+    # Check file type using imghdr
+    try:
+        file_content = image.read()
+        image.seek(0)  # Reset file pointer
+        if imghdr.what(None, file_content) not in ['jpeg', 'png', 'gif']:
+            return False
+    except Exception as e:
+        print(f"Error checking image type: {str(e)}")
+        return False
+
+    # Check MIME type using python-magic
+    try:
+        mime = magic.from_buffer(file_content, mime=True)
+        if not mime.startswith('image/'):
+            return False
+    except Exception as e:
+        print(f"Error checking MIME type: {str(e)}")
+        return False
+
+    return True
 
 @login_required
 def add_product(request):
@@ -34,6 +98,26 @@ def add_product(request):
         except Category.DoesNotExist:
             messages.error(request, 'Invalid category selected.')
             return render(request, 'Products/SellerIndex.html', {'categories': categories, 'error': 'Invalid category'})
+
+        # Check image
+        if image:
+            if not is_valid_image(image):
+                messages.error(request, 'Invalid image format. Please upload a valid image file (JPG, PNG, or GIF).')
+                return render(request, 'Products/SellerIndex.html', {'categories': categories, 'error': 'Invalid image format','username': request.user.username})
+
+            creation_time, method_used = get_image_creation_time(image)
+            if not creation_time:
+                messages.error(request, 'Unable to verify image creation time. Please ensure you are uploading a recent, unedited image directly from your device.')
+                return render(request, 'Products/SellerIndex.html', {'categories': categories, 'error': 'Unable to verify image creation time','username': request.user.username})
+
+            cutoff_date = datetime.now() - timedelta(days=1)
+            if creation_time < cutoff_date:
+                messages.error(request, f'Image is too old. Please upload an image taken within the last 24 hours. (Verification method: {method_used})')
+                return render(request, 'Products/SellerIndex.html', {'categories': categories, 'error': 'Image is too old','username': request.user.username})
+
+
+            # Reset file pointer
+            image.seek(0)
 
         product = Product(
             seller=request.user,
@@ -274,3 +358,83 @@ def search_results(request):
         html = render_to_string('Products/search_results_partial.html', context)
         return JsonResponse({'html': html, 'query': query})
     return render(request, 'Products/search_results.html', context)
+
+def live_search(request):
+    query = request.GET.get('q', '')
+    products = Product.objects.filter(name__icontains=query)[:3]  # Limit to 3 results
+    categories = Category.objects.filter(name__icontains=query)[:2]  # Limit to 2 results
+    results = []
+    
+    for product in products:
+        results.append({
+            'name': product.name,
+            'image': product.image.url if product.image else '',
+            'url': reverse('product_detail', args=[product.id]),
+            'type': 'product'
+        })
+    
+    for category in categories:
+        results.append({
+            'name': category.name,
+            'image': category.image.url if category.image else '',
+            'url': reverse('category_detail', args=[category.id]),
+            'type': 'category'
+        })
+    return JsonResponse({'results': results})
+
+@login_required
+def delete_product(request, product_id):
+    product = get_object_or_404(Product, id=product_id, seller=request.user)
+    if request.method == 'POST':
+        product.delete()
+        messages.success(request, 'Product deleted successfully.')
+        return redirect('sellerproductlist')  # Redirect to the product list page
+    return redirect('sellerproductlist')
+
+
+@login_required
+def add_review(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment')
+        
+        if not rating or not comment:
+            messages.error(request, 'Both rating and comment are required.')
+            return redirect('product_detail', product_id=product.id)
+        
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except ValueError:
+            messages.error(request, 'Invalid rating. Please provide a rating between 1 and 5.')
+            return redirect('product_detail', product_id=product.id)
+        
+        try:
+            review = Review(
+                product=product,
+                user=request.user,
+                rating=rating,
+                comment=comment
+            )
+            review.full_clean()  # This will call the clean method and raise ValidationError if limit exceeded
+            review.save()
+            messages.success(request, 'Your review has been added successfully.')
+        except ValidationError as e:
+            messages.error(request, str(e))
+        
+        return redirect('product_detail', product_id=product.id)
+    return redirect('product_detail', product_id=product.id)
+
+def product_detail(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    reviews = product.reviews.all().order_by('-created_at')
+    avg_rating = round(product.average_rating * 2) / 2
+    # ... other context data ...
+    return render(request, 'Products/shop-detail.html', {
+        'product': product,
+        'reviews': reviews,
+        'username':request.user,
+        'avg_rating': avg_rating,
+    })

@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser,Group,Permission
 from django.conf import settings
 from django.utils.text import slugify
+from django.db.models import Avg 
 # Create your models here.
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -45,6 +46,9 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+    @property
+    def average_rating(self):
+        return self.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
 
 class Stock(models.Model):
     product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='stock')
@@ -82,3 +86,27 @@ class CartItem_table(models.Model):
     @property
     def subtotal(self):
         return self.product.price * self.quantity
+    
+
+class Review(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def clean(self):
+        # Check if the user has already submitted 3 reviews for this product
+        if Review.objects.filter(product=self.product, user=self.user).count() >= 3:
+            raise ValidationError(_("You can only submit up to 3 reviews per product."))
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.username}'s review for {self.product.name}"

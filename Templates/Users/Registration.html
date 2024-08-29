@@ -177,6 +177,7 @@
                                 </span>
                                 <input type="text" placeholder="Email" class="form-control"  name="your_email" id="your_email" />
                             </div>
+                            <p class="email-err small-text"></p>
 							{% if error_message %}
 								<p class="text-danger">{{error_message}}</p>
 								{% endif %}
@@ -277,6 +278,7 @@
 <script>
 		$(document).ready(function() {
 		let pwd, cpwd;
+        let r_uname, r_phone, r_pwd, r_email;
 		$("#first-name").keyup(function() {
 			var uname = document.getElementById("first-name").value
 			var c_uname = /^[A-z _]{3,20}$/
@@ -302,6 +304,18 @@
 			valid()
 			}
 		})
+        $("#your_email").keyup(function() {
+        var email = $(this).val();
+        var emailRegex = /^[^\s@]+@[^\s@]+\.(com|net|org|edu|in|co\.in|gov)$/;
+        r_email = emailRegex.test(email);
+        if (!r_email) {
+            $("#submit").attr('disabled', true);
+            $(".email-err").text("Please enter a valid email address (e.g., user@example.com)");
+        } else {
+            $(".email-err").text("");
+            valid();
+        }
+    });
 		$("#your_password").keyup(function() {
 			pwd = document.getElementById("your_password").value
 			var c_pwd = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,}$/;
@@ -329,7 +343,7 @@
 			}
 		})
 		function valid() {
-			if (r_uname == true && r_pwd == true && r_phone == true ) {
+			if (r_uname == true && r_pwd == true && r_phone == true && r_email == true) {
 			$("#submit").attr('disabled', false);
 			}
 		}

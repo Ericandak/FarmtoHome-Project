@@ -251,7 +251,7 @@
                             <h5>Total</h5>
                             <h5 id="cart-total">₹{{ total }}</h5>
                         </div>
-                        <button id="checkoutBtn" class="btn btn-outline-primary btn-block mt-3">Proceed to Checkout</button>
+                        <a href="{% url 'orders:checkout' %}" class="btn btn-primary btn-block mt-3">Proceed to Checkout</a>
                     </div>
                 </div>
             </div>
@@ -466,21 +466,4 @@
             });
         });
     </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const checkoutBtn = document.getElementById('checkoutBtn');
-            const processingModal = new bootstrap.Modal(document.getElementById('processingModal'));
-        
-            checkoutBtn.addEventListener('click', function() {
-                processingModal.show();
-                
-                // Simulate processing time (3 seconds)
-                setTimeout(function() {
-                    processingModal.hide();
-                    // Here you would normally redirect to the actual checkout page or process the order
-                    alert('Order processed successfully!');
-                }, 3000);
-            });
-        });
-        </script>
 </body>

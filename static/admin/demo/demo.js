@@ -224,7 +224,7 @@ demo = {
       data: {
         labels: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
         datasets: [{
-          label: "Data",
+          label: "Monthly Sales",
           borderColor: chartColor,
           pointBorderColor: chartColor,
           pointBackgroundColor: "#1e3d60",
@@ -237,7 +237,7 @@ demo = {
           fill: true,
           backgroundColor: gradientFill,
           borderWidth: 2,
-          data: [50, 150, 100, 190, 130, 90, 150, 160, 120, 140, 190, 95]
+          data: window.chartData || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] // Use the real data passed from the Django view
         }]
       },
       options: {
@@ -281,13 +281,11 @@ demo = {
               color: "rgba(255,255,255,0.1)",
               zeroLineColor: "transparent"
             }
-
           }],
           xAxes: [{
             gridLines: {
               zeroLineColor: "transparent",
               display: false,
-
             },
             ticks: {
               padding: 10,

@@ -462,14 +462,26 @@
   <script src="{% static 'admin/js/plugins/bootstrap-notify.js' %}"></script>
   <!-- Control Center for Now Ui Dashboard: parallax effects, scripts for the example pages etc -->
   <script src="{% static 'admin/js/now-ui-dashboard.min.js' %}?v=1.5.0" type="text/javascript"></script><!-- Now Ui Dashboard DEMO methods, don't include it in your project! -->
-  <script src="{% static 'admin/demo/demo.js' %}"></script>
   <script>
-    $(document).ready(function() {
-      // Javascript method's body can be found in assets/js/demos.js
-      demo.initDashboardPageCharts();
-
-    });
+    var chartData = {{ chart_data|safe }};
   </script>
-</body>
+  <script src="{% static 'admin/demo/demo.js' %}"></script>
+  <script src="{% static 'admin/js/custom-charts.js' %}"></script>
 
+  <script>
+    var salesDates = {{ sales_dates|safe }};
+    var salesAmounts = {{ sales_amounts|safe }};
+    var chartData = {{ chart_data|safe }};
+    
+    $(document).ready(function() {
+      // Call the original initialization
+      demo.initDashboardPageCharts();
+      
+      // Call your custom functions
+      initSalesChart(salesDates, salesAmounts);
+      initCustomDashboardChart(chartData);
+    });
+</script>
+</script>
+</body>
 </html>

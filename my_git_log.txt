@@ -1,3 +1,4 @@
+* 4de441b - Ericandak, 5 hours ago : Validation updation
 * f91967f - Ericandak, 14 hours ago : 50%
 * 0752f0a - Ericandak, 3 days ago : Product search cart filter
 * fb0abd3 - Ericandak, 6 days ago :  seller Login,product app

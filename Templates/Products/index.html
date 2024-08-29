@@ -84,34 +84,59 @@
         .alert .btn-close {
             filter: invert(1) grayscale(100%) brightness(200%);
         }
+
         .modal-backdrop {
-    opacity: 0.5;
-}
+            opacity: 0.5;
+        }
 
-#searchModal .modal-content {
-    background-color: rgba(255, 255, 255, 0.9);
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-}
+        #searchModal .modal-content {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
 
-#searchModal .modal-header {
-    border-bottom: none;
-    padding-bottom: 0;
-}
+        #searchModal .modal-header {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
 
-#searchModal .modal-body {
-    padding-top: 0;
-}
+        #searchModal .modal-body {
+            padding-top: 0;
+        }
 
-#searchModal .form-control {
-    border-radius: 20px 0 0 20px;
-    border: 1px solid #ced4da;
-}
+        #searchModal .form-control {
+            border-radius: 20px 0 0 20px;
+            border: 1px solid #ced4da;
+        }
 
-#searchModal .btn {
-    border-radius: 0 20px 20px 0;
-}
+        #searchModal .btn {
+            border-radius: 0 20px 20px 0;
+        }
+
+        #liveSearchResults {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .search-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .search-item a {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .search-item img {
+            margin-right: 10px;
+        }
     </style>
 </head>
 
@@ -154,7 +179,7 @@
                     <div class="navbar-nav mx-auto">
                         <a href="{% url 'home' %}" class="nav-item nav-link active">Home</a>
                         <a href="shop.html" class="nav-item nav-link">Shop</a>
-                        <a href="shop-detail.html" class="nav-item nav-link">Shop Detail</a>
+                        <a href="{% url 'orders:user_orders' %}" class="nav-item nav-link">My Orders</a>
                         <div class="nav-item dropdown">
                             <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Pages</a>
                             <div class="dropdown-menu m-0 bg-secondary rounded-0">
@@ -216,12 +241,14 @@
                 <div class="modal-body">
                     <form id="searchForm" action="{% url 'search_results' %}" method="GET">
                         <div class="input-group">
-                            <input type="search" name="q" class="form-control" placeholder="Enter keywords" aria-label="Search" required>
+                            <input type="search" name="q" id="searchInput" class="form-control"
+                                placeholder="Enter keywords" aria-label="Search" required>
                             <button class="btn btn-primary" type="submit">
                                 <i class="fa fa-search"></i>
                             </button>
                         </div>
                     </form>
+                    <div id="liveSearchResults" class="mt-3"></div>
                 </div>
             </div>
         </div>
@@ -236,13 +263,6 @@
                 <div class="col-md-12 col-lg-7">
                     <h4 class="mb-3 text-secondary">100% Organic Crops</h4>
                     <h1 class="mb-5 display-3 text-primary">Organic Veggies & Fruits Crops Diaries</h1>
-                    <div class="position-relative mx-auto">
-                        <input class="form-control border-2 border-secondary w-75 py-3 px-4 rounded-pill" type="number"
-                            placeholder="Search">
-                        <button type="submit"
-                            class="btn btn-primary border-2 border-secondary py-3 px-4 position-absolute rounded-pill text-white h-100"
-                            style="top: 0; right: 25%;">Submit Now</button>
-                    </div>
                 </div>
                 <div class="col-md-12 col-lg-5">
                     <div id="carouselId" class="carousel slide position-relative" data-bs-ride="carousel">
@@ -406,14 +426,16 @@
                                             </div>
                                             <div class="card-body d-flex flex-column">
                                                 <h5 class="card-title">
-                                                    <a href="{% url 'product_detail' product.id %}" class="text-dark text-decoration-none">
+                                                    <a href="{% url 'product_detail' product.id %}"
+                                                        class="text-dark text-decoration-none">
                                                         {{ product.name }}
                                                     </a>
                                                 </h5>
                                                 <p class="card-text flex-grow-1">{{ product.description|truncatewords:20 }}</p>
                                                 <div class="d-flex justify-content-between align-items-center mt-auto">
                                                     <span class="text-primary fw-bold">₹{{ product.price }}/ kg</span>
-                                                    <a href="{% url 'add_to_cart' product.id %}" class="btn btn-outline-primary btn-sm">Add to cart</a>
+                                                    <a href="{% url 'add_to_cart' product.id %}"
+                                                        class="btn btn-outline-primary btn-sm">Add to cart</a>
                                                 </div>
                                             </div>
                                         </div>
@@ -1360,7 +1382,64 @@
     <!-- Template Javascript -->
     <script src="{% static 'js/main.js' %}"></script>
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
+            var searchTimer;
+
+            $('#searchInput').on('input', function () {
+    clearTimeout(searchTimer);
+    var query = $(this).val();
+
+    if (query.length > 1) {
+        searchTimer = setTimeout(function () {
+            $.ajax({
+                url: '{% url "live_search" %}',
+                data: {
+                    'q': query
+                },
+                dataType: 'json',
+                success: function (data) {
+                    var results = '';
+                    var productResults = '';
+                    var categoryResults = '';
+
+                    data.results.forEach(function (item) {
+                        var itemHtml = '<div class="search-item">';
+                        itemHtml += '<a href="' + item.url + '">';
+                        if (item.image) {
+                            itemHtml += '<img src="' + item.image + '" alt="' + item.name + '" style="width: 50px; height: 50px;">';
+                        }
+                        itemHtml += '<span>' + item.name + '</span>';
+                        itemHtml += '</a>';
+                        itemHtml += '</div>';
+
+                        if (item.type === 'product') {
+                            productResults += itemHtml;
+                        } else if (item.type === 'category') {
+                            categoryResults += itemHtml;
+                        }
+                    });
+
+                    results = '<h6>Products:</h6>' + productResults;
+                    if (categoryResults) {
+                        results += '<h6>Categories:</h6>' + categoryResults;
+                    }
+
+                    $('#liveSearchResults').html(results);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error("AJAX error: " + textStatus + ' : ' + errorThrown);
+                }
+            });
+        }, 300);
+    } else {
+        $('#liveSearchResults').html('');
+            }
+            $('#searchForm').on('submit', function (e) {
+                e.preventDefault();
+                var query = $('#searchInput').val();
+                window.location.href = "{% url 'search_results' %}?q=" + encodeURIComponent(query);
+            });
+
             function loadResults(url) {
                 var formData = $('#filter-form').serialize();
                 var sortValue = $('#sort').val();
@@ -1370,30 +1449,30 @@
                 $.ajax({
                     url: url,
                     data: formData,
-                    success: function(data) {
+                    success: function (data) {
                         $('#search-results').html(data.html);
                         $('#search-query').text(data.query);
                         history.pushState(null, '', url + '?' + formData);
                     }
                 });
             }
-    
-            $('#filter-form').on('submit', function(e) {
+            $('#filter-form').on('submit', function (e) {
                 e.preventDefault();
                 loadResults("{% url 'search_results' %}");
             });
-    
-            $(document).on('change', '#filter-form select, #filter-form input', function() {
+
+            $(document).on('change', '#filter-form select, #filter-form input', function () {
                 loadResults("{% url 'search_results' %}");
             });
-    
-            // Add this line to handle sort changes
-            $('#sort').on('change', function() {
+
+            $('#sort').on('change', function () {
                 loadResults("{% url 'search_results' %}");
             });
-    
+
             // Initial load
-            loadResults(window.location.href);
+            if (window.location.pathname === "{% url 'search_results' %}") {
+                loadResults(window.location.href);
+            }
         });
     </script>
 </body>

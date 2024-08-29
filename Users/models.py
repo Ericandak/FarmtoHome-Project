@@ -31,6 +31,26 @@ class Address_table(models.Model):
 
     def __str__(self):
         return f"{self.address}, {self.city}, {self.state}"
+class ShippingAddress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='shipping_addresses')
+    full_name = models.CharField(max_length=100)
+    address = models.CharField(max_length=100)
+    city = models.CharField(max_length=50)
+    zip_code = models.CharField(max_length=20)
+    state = models.ForeignKey(State, on_delete=models.CASCADE)
+    is_default = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.full_name}: {self.address}, {self.city}, {self.state}"
+
+    class Meta:
+        verbose_name_plural = "Shipping Addresses"
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            # Set is_default=False for all other addresses of this user
+            ShippingAddress.objects.filter(user=self.user).update(is_default=False)
+        super().save(*args, **kwargs)
 class SellerDetails(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     FarmName=models.CharField(max_length=15, blank=True, null=True)

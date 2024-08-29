@@ -41,6 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'Users',
     'Products',
+    'orders',
+    'reports',
+    'payments',
     'django.contrib.sites',  
     'allauth',
     'allauth.account',
@@ -130,7 +133,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
+import os
+
 STATIC_URL = '/static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 STATICFILES_DIRS = [
    BASE_DIR/ "static" # assuming your static files are in a 'static' directory in your project root
@@ -189,3 +197,8 @@ ACCOUNT_USERNAME_REQUIRED = False
 SOCIALACCOUNT_LOGIN_ON_GET=True
 
 PASSWORD_RESET_TIMEOUT=300
+
+
+#Payment
+RAZORPAY_KEY_ID = 'rzp_test_sUutjryqHIWPLJ'  # Your Test Key ID
+RAZORPAY_KEY_SECRET = 'ztDzF6ipQxKWATrUdM7YLvJn'

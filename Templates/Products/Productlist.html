@@ -41,6 +41,7 @@
                     <span class="navbar-toggler-bar bar1"></span>
                     <span class="navbar-toggler-bar bar2"></span>
                     <span class="navbar-toggler-bar bar3"></span>
+                    <span class="navbar-toggler-bar bar3"></span>
                 </button>
             </div>
             <div class="collapse navbar-collapse justify-content-end" id="navigation">
@@ -111,7 +112,10 @@
                                 <p class="card-text"><strong>Category:</strong> {{ product.category.name }}</p>
                                 <p class="card-text"><strong>Stock:</strong> {{ product.stock.quantity }}</p>
                                 <a href="{% url 'productedit' product.id %}" class="btn btn-primary">Edit</a>
-                                <a href="#" class="btn btn-danger">Delete</a>
+                                <form method="post" action="{% url 'delete_product' product.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this product?');">Delete</button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -167,6 +171,13 @@
             </div>
         </div>
     </footer>
+    <script>
+        function confirmDelete(event) {
+            if (!confirm('Are you sure you want to delete this product?')) {
+                event.preventDefault();
+            }
+        }
+    </script>
 </body>
 
 <!--   Core JS Files   -->

@@ -17,6 +17,12 @@ from django.db import IntegrityError
 from django.views.decorators.http import require_GET
 from allauth.account.utils import user_username
 from django.templatetags.static import static
+from django.db.models import Sum
+from django.db.models.functions import TruncMonth,TruncDate
+from orders.models import Order
+import json
+from django.utils import timezone
+from datetime import timedelta
 
 
 # Create your views here.
@@ -39,7 +45,11 @@ def UserRegistration(request):
         email=reg['email']
         if User.objects.filter(email=email).exists():
             error_message = "Email is already registered."
-            return render(request, 'Users/Registration.html', {'error_message': error_message})
+            cont = {
+                'background_image_url': static('assets/img/crops.jpg'),
+                'error_message': error_message
+                }
+            return render(request, 'Users/Registration.html', cont)
         else:
         # Redirect to send OTP email
             return redirect('send_otp_email')
@@ -603,17 +613,48 @@ def Seller_Details(request, state_id):
         }
 
     return render(request, 'Users/Sellerentry.html', context)
-
+@never_cache
 def adminlog(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and request.user.is_staff:
         username = request.user.username
-        return render(request, 'admin/dashboard.html', {'username': username})
-    else:
-        return redirect('Login')  # Redirect to login page if not authenticated
+        end_date = timezone.now().date()
+        start_date = end_date - timezone.timedelta(days=30)
+        
+        # Data for the new sales chart (last 30 days)
+        sales_data = Order.objects.filter(order_date__date__range=[start_date, end_date])\
+            .annotate(date=TruncDate('order_date'))\
+            .values('date')\
+            .annotate(total_sales=Sum('total_amount'))\
+            .order_by('date')
 
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+        dates = [item['date'].strftime('%Y-%m-%d') for item in sales_data]
+        sales = [float(item['total_sales']) for item in sales_data]
+        
+        # Data for the existing chart (monthly data for the current year)
+        current_year = timezone.now().year
+        monthly_data = Order.objects.filter(order_date__year=current_year)\
+            .annotate(month=TruncMonth('order_date'))\
+            .values('month')\
+            .annotate(total_sales=Sum('total_amount'))\
+            .order_by('month')
+
+        chart_data = [0] * 12
+        for entry in monthly_data:
+            month_index = entry['month'].month - 1
+            chart_data[month_index] = float(entry['total_sales'])
+        
+        context = {
+            'username': username,
+            'sales_dates': json.dumps(dates),
+            'sales_amounts': json.dumps(sales),
+            'chart_data': json.dumps(chart_data),
+        }
+        
+        return render(request, 'admin/dashboard.html', context)
+    else:
+        return redirect('Login')
+
+
 
 @login_required
 def adminupdate(request):
