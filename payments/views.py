@@ -74,12 +74,11 @@ def payment_callback(request):
             order.save()
 
             messages.success(request, 'Payment successful and order confirmed.')
-            return redirect('orders:order_confirmation', order_id=order.id)
+            return redirect('orders:payment_callback')
         except Exception as e:
             payment = Payment.objects.get(id=internal_payment_id)
             payment.status = 'failed'
             payment.save()
             messages.error(request, f'Payment failed: {str(e)}. Please try again.')
             return redirect('orders:checkout')
-
     return redirect('orders:checkout')

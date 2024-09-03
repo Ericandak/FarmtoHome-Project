@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse,JsonResponse
 import pyotp
 from django.core.mail import send_mail
+from django.db.models import Exists, OuterRef
 import random
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_log,logout
@@ -244,6 +245,10 @@ def home(request):
     cart_item_count = 0
     products = Product.objects.filter(is_active=True)  # Fetch all active products
     categories = Category.objects.all()
+    categories_with_products = Category.objects.filter(
+        Exists(Product.objects.filter(category=OuterRef('pk'), is_active=True))
+    )
+    
     try:
         cart = Cart_table.objects.get(user=user)
         cart_item_count = cart.items.count()
@@ -257,7 +262,7 @@ def home(request):
     context = {
         'username': username,
         'products': products,
-        'categories': categories,
+        'categories': categories_with_products,
         'cart_item_count': cart_item_count
     }
     
@@ -637,6 +642,15 @@ def adminlog(request):
             .values('month')\
             .annotate(total_sales=Sum('total_amount'))\
             .order_by('month')
+        
+        three_days_ago = timezone.now() - timedelta(days=3)
+        recent_orders = Order.objects.filter(
+        order_date__gte=three_days_ago
+    ).select_related('consumer').order_by('-order_date')[:5]  # Limit to 5 most recent orders
+
+        recent_users = User.objects.filter(
+        date_joined__gte=timezone.now() - timedelta(days=30)
+        ).order_by('-date_joined')[:5]  # Limit to 5 most recent users
 
         chart_data = [0] * 12
         for entry in monthly_data:
@@ -648,6 +662,8 @@ def adminlog(request):
             'sales_dates': json.dumps(dates),
             'sales_amounts': json.dumps(sales),
             'chart_data': json.dumps(chart_data),
+            'recent_orders': recent_orders,
+            'recent_users':recent_users,
         }
         
         return render(request, 'admin/dashboard.html', context)

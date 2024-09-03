@@ -78,26 +78,31 @@ def checkout(request):
 @login_required
 @transaction.atomic
 def order_payment_callback(request):
-    payment_result = payment_callback(request)
-    if payment_result.get('success'):
-        order = Order.objects.get(id=payment_result['order_id'])
-        
-        # Update stock
-        for order_item in order.items.all():
-            stock = Stock.objects.get(product=order_item.product)
-            stock.quantity -= order_item.quantity
-            stock.save()
+    payment_callback(request)
+    if any(message.tags == 'success' for message in messages.get_messages(request)):
+        try:
+            # Get the latest order for the user
+            order = Order.objects.filter(consumer=request.user).latest('order_date')
+            
+            # Update stock
+            for order_item in order.items.all():
+                stock = Stock.objects.get(product=order_item.product)
+                stock.quantity -= order_item.quantity
+                stock.save()
 
-        # Clear the user's cart
-        cart = Cart_table.objects.get(user=request.user)
-        CartItem_table.objects.filter(cart=cart).delete()
-        cart.delete()
+            # Clear the user's cart
+            cart = Cart_table.objects.get(user=request.user)
+            CartItem_table.objects.filter(cart=cart).delete()
+            cart.delete()
 
-        messages.success(request, 'Payment successful and order confirmed.')
-        return redirect('orders:order_confirmation', order_id=order.id)
+            return redirect('orders:order_confirmation', order_id=order.id)
+        except Order.DoesNotExist:
+            messages.error(request, 'Order not found. Please contact support.')
     else:
+        # Payment failed
         messages.error(request, 'Payment failed. Please try again.')
-        return redirect('orders:checkout')
+    
+    return redirect('orders:checkout')
 
 @transaction.atomic
 def process_order(request, shipping_data):

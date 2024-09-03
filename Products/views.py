@@ -361,6 +361,7 @@ def search_results(request):
 
 def live_search(request):
     query = request.GET.get('q', '')
+    print(f"Live search query: {query}")
     products = Product.objects.filter(name__icontains=query)[:3]  # Limit to 3 results
     categories = Category.objects.filter(name__icontains=query)[:2]  # Limit to 2 results
     results = []
